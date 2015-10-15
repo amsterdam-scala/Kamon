@@ -27,12 +27,11 @@ object ElasticSearch extends ExtensionId[ElasticSearchExtension] with ExtensionI
 }
 
 class ElasticSearchExtension(system: ExtendedActorSystem) extends Kamon.Extension {
-
   implicit val as = system
   val log = Logging(system, classOf[ElasticSearchExtension])
 
   log.info("Starting the Kamon(ElasticSearch) extension")
 
-  private val elasticSearchConfig = system.settings.config.getConfig("kamon.elasticsearch")
+  private val elasticSearchConfig = new ElasticSearchConfiguration(system.settings.config.getConfig("kamon.elasticsearch"))
 
 }
