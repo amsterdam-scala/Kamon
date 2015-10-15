@@ -18,8 +18,12 @@ package kamon.elasticsearch
 
 import akka.actor._
 import akka.event.Logging
-
 import kamon.Kamon
+import kamon.util.ConfigTools.Syntax
+import kamon.metric._
+
+import scala.collection.JavaConverters._
+import scala.concurrent.duration._
 
 object ElasticSearch extends ExtensionId[ElasticSearchExtension] with ExtensionIdProvider {
   override def lookup(): ExtensionId[_ <: Extension] = ElasticSearch
@@ -35,4 +39,32 @@ class ElasticSearchExtension(system: ExtendedActorSystem) extends Kamon.Extensio
 
   private val elasticSearchConfig = system.settings.config.getConfig("kamon.elasticsearch")
 
+  val subscriptions = elasticSearchConfig.getConfig("subscriptions")
+
+  val datadogHost = elasticSearchConfig.getString("hostname")
+  val datadogPort = elasticSearchConfig.getInt("port")
+
+  val flushInterval = elasticSearchConfig.getFiniteDuration("flush-interval")
+  val tickInterval = Kamon.metrics.settings.tickInterval
+
+  val datadogMetricsListener = buildMetricsListener(tickInterval, flushInterval)
+
+  subscriptions.firstLevelKeys.foreach { subscriptionCategory ⇒
+    subscriptions.getStringList(subscriptionCategory).asScala.foreach { pattern ⇒
+      Kamon.metrics.subscribe(subscriptionCategory, pattern, datadogMetricsListener, permanently = true)
+    }
+  }
+
+  def buildMetricsListener(tickInterval: FiniteDuration, flushInterval: FiniteDuration): ActorRef = {
+    assert(flushInterval >= tickInterval, "ElasticSearch flush-interval needs to be equal or greater to the tick-interval")
+
+    val metricsSender = system.actorOf(ElasticSearchMetricsSender.props(datadogHost, datadogPort), "elasticsearch-metrics-sender")
+
+    if (flushInterval == tickInterval) {
+      // No need to buffer the metrics, let's go straight to the metrics sender.
+      metricsSender
+    } else {
+      system.actorOf(TickMetricSnapshotBuffer.props(flushInterval, metricsSender), "elasticsearch-metrics-buffer")
+    }
+  }
 }
