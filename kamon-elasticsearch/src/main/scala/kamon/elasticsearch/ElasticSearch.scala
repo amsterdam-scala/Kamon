@@ -38,12 +38,12 @@ class ElasticSearchExtension(system: ExtendedActorSystem) extends Kamon.Extensio
 
   private val elasticSearchConfig = new ElasticSearchConfiguration(system.settings.config.getConfig("kamon.elasticsearch"))
 
-  val subscriptions = elasticSearchConfig.getConfig("subscriptions")
+  val subscriptions = elasticSearchConfig.subscriptions
 
-  val datadogHost = elasticSearchConfig.getString("hostname")
-  val datadogPort = elasticSearchConfig.getInt("port")
+  val datadogHost = elasticSearchConfig.hostname
+  val datadogPort = elasticSearchConfig.port
 
-  val flushInterval = elasticSearchConfig.getFiniteDuration("flush-interval")
+  val flushInterval = elasticSearchConfig.flushInterval
   val tickInterval = Kamon.metrics.settings.tickInterval
 
   val datadogMetricsListener = buildMetricsListener(tickInterval, flushInterval)
