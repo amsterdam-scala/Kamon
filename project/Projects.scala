@@ -164,6 +164,14 @@ object Projects extends Build {
         compile(akkaActor) ++
         test(scalatest, akkaTestKit, slf4Api, slf4nop))
 
+  lazy val kamonElasticSearch = Project("kamon-elasticsearch", file("kamon-elasticsearch"))
+    .dependsOn(kamonCore % "compile->compile;test->test")
+    .settings(basicSettings: _*)
+    .settings(formatSettings: _*)
+    .settings(
+      libraryDependencies ++=
+        compile(akkaActor) ++
+          test(scalatest, akkaTestKit, slf4Api, slf4nop))
 
   lazy val kamonLogReporter = Project("kamon-log-reporter", file("kamon-log-reporter"))
     .dependsOn(kamonCore)
