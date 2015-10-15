@@ -170,7 +170,7 @@ object Projects extends Build {
     .settings(formatSettings: _*)
     .settings(
       libraryDependencies ++=
-        compile(akkaActor) ++
+        compile(akkaActor, sprayClient, sprayJson) ++
           test(scalatest, akkaTestKit, slf4Api, slf4nop))
 
   lazy val kamonLogReporter = Project("kamon-log-reporter", file("kamon-log-reporter"))
