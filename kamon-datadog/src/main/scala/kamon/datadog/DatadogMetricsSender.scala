@@ -82,6 +82,19 @@ class DatadogMetricsSender(remote: InetSocketAddress, maxPacketSizeInBytes: Long
       .append(buildIdentificationTag(entity, metricKey))
       .result()
 
+
+  0
+    10  1
+    20  2
+    30  3
+    40  4
+    50  5
+    60  6
+    70
+    80
+    90
+    100
+
   def encodeDatadogTimer(level: Long, count: Long): String = {
     val samplingRate: Double = 1D / count
     level.toString + "|ms" + (if (samplingRate != 1D) "|@" + samplingRateFormat.format(samplingRate) else "")

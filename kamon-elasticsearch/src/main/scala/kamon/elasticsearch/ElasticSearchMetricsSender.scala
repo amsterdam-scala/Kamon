@@ -16,12 +16,62 @@
 
 package kamon.elasticsearch
 
+
+import java.util.UUID
+
+import kamon.metric.SubscriptionsDispatcher.TickMetricSnapshot
+import kamon.metric.instrument.{ Counter, Histogram }
+import kamon.metric.{ SingleInstrumentEntityRecorder, MetricKey, Entity }
 import akka.actor.{Props, Actor}
+import spray.json._
+import spray.http._
 
 class ElasticSearchMetricsSender(esHost: String, esPort: Int) extends Actor {
+  private val elasticClient = new SimpleElasticSearchClient(context.system, esHost, esPort)
 
-  def receive = {
-    case _ => // TODO
+
+  override def preStart(): Unit = {
+   //create index
+  }
+
+  def receive = receiveMetrics
+
+  private def receiveMetrics: Receive = {
+    case tick: TickMetricSnapshot =>
+      generateDocuments(tick)
+  }
+
+  private def generateDocuments(tick: TickMetricSnapshot) = {
+    for {
+      (groupIdentity, groupSnapshot) ← tick.metrics
+      (metricIdentity, metricSnapshot) ← groupSnapshot.metrics
+    } {
+
+      val key = buildMetricName(groupIdentity, metricIdentity)
+
+      metricSnapshot match {
+        case hs: Histogram.Snapshot ⇒
+//          hs.recordsIterator.foreach { record ⇒
+//            val measurementData = formatMeasurement(groupIdentity, metricIdentity, encodeDatadogTimer(record.level, record.count))
+//            packetBuilder.appendMeasurement(key, measurementData)
+//
+//          }
+
+        case cs: Counter.Snapshot ⇒
+          val doc = s"""
+             |{
+             |  "category": "${groupIdentity.category}",
+             |  "name": "${groupIdentity.name}",
+             |  "tags": ${groupIdentity.tags.toJson.toString},
+             |  "metric": "${metricIdentity.name}",
+             |  "from": ${tick.from.millis},
+             |  "to": ${tick.to.millis},
+             |  "value": ${cs.count}
+             |}
+           """.stripMargin
+          elasticClient.doRest(Post(s"/stats/${UUID.randomUUID()}", doc))
+      }
+    }
   }
 }
 
