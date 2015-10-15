@@ -16,6 +16,23 @@
 
 package kamon.elasticsearch
 
-object ElasticSearch {
-  // TODO
+import akka.actor._
+import akka.event.Logging
+
+import kamon.Kamon
+
+object ElasticSearch extends ExtensionId[ElasticSearchExtension] with ExtensionIdProvider {
+  override def lookup(): ExtensionId[_ <: Extension] = ElasticSearch
+  override def createExtension(system: ExtendedActorSystem): ElasticSearchExtension = new ElasticSearchExtension(system)
+}
+
+class ElasticSearchExtension(system: ExtendedActorSystem) extends Kamon.Extension {
+
+  implicit val as = system
+  val log = Logging(system, classOf[ElasticSearchExtension])
+
+  log.info("Starting the Kamon(ElasticSearch) extension")
+
+  private val elasticSearchConfig = system.settings.config.getConfig("kamon.elasticsearch")
+
 }
